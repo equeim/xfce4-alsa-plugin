@@ -1,0 +1,46 @@
+# Russian translations for xfce4-alsa-plugin package
+# Английские переводы для пакета xfce4-alsa-plugin.
+# Copyright (C) 2015 Alexey Rochev <equeim@gmail.com>
+# This file is distributed under the same license as the xfce4-alsa-plugin package.
+# Alexey Rochev <equeim@gmail.com>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xfce4-alsa-plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-09-20 15:06+0300\n"
+"PO-Revision-Date: 2015-09-20 15:06+0300\n"
+"Last-Translator: Alexey Rochev <equeim@gmail.com>\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../alsa.desktop.in.h:1 ../src/settingswindow.vala:33
+msgid "ALSA Volume Control"
+msgstr "Регулятор громкости ALSA"
+
+#: ../alsa.desktop.in.h:2
+msgid "Adjust ALSA volume levels"
+msgstr "Регулирует уровень звука ALSA"
+
+#. Device label
+#: ../src/settingswindow.vala:44
+msgid "Device:"
+msgstr "Устройство вывода:"
+
+#. Channel label
+#: ../src/settingswindow.vala:84
+msgid "Channel:"
+msgstr "Канал микшера:"
+
+#: ../src/volumebutton.vala:48
+msgid "Plugin is inactive"
+msgstr "Плагин неактивен"
+
+#: ../src/volumebutton.vala:97
+msgid "muted"
+msgstr "без звука"

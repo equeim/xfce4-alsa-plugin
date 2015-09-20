@@ -1,0 +1,8 @@
+[Xfce Panel]
+Type=X-XFCE-PanelPlugin
+Encoding=UTF-8
+_Name=ALSA Volume Control
+_Comment=Adjust ALSA volume levels
+Icon=multimedia-volume-control
+X-XFCE-Module=alsa
+X-XFCE-API=1.0
