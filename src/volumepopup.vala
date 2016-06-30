@@ -16,96 +16,114 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-public class VolumePopup : Gtk.Window {
-    Xfce.PanelPlugin plugin;
-    VolumeButton volume_button;
-    Gtk.VScale volume_scale;
+namespace AlsaPlugin {
+    private class VolumePopup : Gtk.Window {
+        private Plugin plugin;
 
-    public VolumePopup(Xfce.PanelPlugin plugin, VolumeButton volume_button, bool active) {
-        GLib.Object(type: Gtk.WindowType.POPUP);
+        public VolumePopup(Plugin plugin) {
+            Object(type: Gtk.WindowType.POPUP);
+            this.plugin = plugin;
 
-        this.plugin = plugin;
-        this.volume_button = volume_button;
+            var frame = new Gtk.Frame(null);
+            frame.shadow_type = Gtk.ShadowType.OUT;
+            add(frame);
 
-        Gtk.Frame popup_frame = new Gtk.Frame(null);
-        add(popup_frame);
-        popup_frame.shadow_type = Gtk.ShadowType.OUT;
+            var scale_container = new Gtk.VBox(false, 0);
+            scale_container.border_width = 2;
+            frame.add(scale_container);
 
-        Gtk.VBox scale_container = new Gtk.VBox(false, 0);
-        popup_frame.add(scale_container);
-        scale_container.border_width = 2;
+            var scale = new Gtk.VScale.with_range(0.0, 100.0, 3.0);
+            scale.draw_value = false;
+            scale.inverted = true;
+            scale.set_size_request(-1, 128);
+            scale.set_value(alsa.volume);
 
-        volume_scale = new Gtk.VScale.with_range(0.0, 100.0, 3.0);
-        scale_container.add(volume_scale);
-        volume_scale.draw_value = false;
-        volume_scale.inverted = true;
-        volume_scale.set_size_request(-1, 128);
+            scale.change_value.connect((scroll, new_value) => {
+                alsa.volume = (long) new_value;
+                return false;
+            });
 
-        button_press_event.connect(on_button_press_event);
-        grab_broken_event.connect(on_grab_broken_event);
-        grab_notify.connect(on_grab_notify);
-        key_release_event.connect(on_key_release_event);
+            alsa.state_changed.connect(() => {
+                scale.set_value(alsa.volume);
+            });
 
-        volume_scale.change_value.connect(on_volume_scale_change_value);
-        alsa.state_changed.connect(update_scale);
+            scale_container.add(scale);
 
-        if (active)
-            update_scale();
-    }
-
-    public void update_scale() {
-        volume_scale.set_value((double) alsa.volume);
-    }
-
-    bool on_button_press_event(Gdk.EventButton event) {
-        if (event.type == Gdk.EventType.BUTTON_PRESS) {
-            hide_popup();
-            return true;
-        }
-        return false;
-    }
-
-    bool on_grab_broken_event() {
-        if (has_grab() && !Gtk.grab_get_current().is_ancestor(this))
-            hide_popup();
-        return false;
-    }
-
-    void on_grab_notify(bool was_grabbed) {
-        if (!was_grabbed && has_grab() && !Gtk.grab_get_current().is_ancestor(this))
-            hide_popup();
-    }
-
-    bool on_key_release_event(Gdk.EventKey event) {
-        if (event.keyval == Gdk.KeySyms.Escape) {
-            hide_popup();
-            return true;
-        }
-        return false; 
-    }
-
-    bool on_volume_scale_change_value(Gtk.ScrollType scroll, double new_value) {
-        if (new_value < 0.0)
-            new_value = 0.0;
-        else if (new_value > 100.0)
-            new_value = 100.0;
-
-        if (volume_scale.get_value() != new_value) {
-            alsa.volume = (long) new_value;
-            volume_button.update_button();
+            show.connect(on_show);
+            hide.connect(on_hide);
+            button_press_event.connect(on_button_press_event);
+            grab_broken_event.connect(on_grab_broken_event);
+            grab_notify.connect(on_grab_notify);
+            key_release_event.connect(on_key_release_event);
         }
 
-        return false;
-    }
+        private void on_show() {
+            Gtk.grab_add(this);
+        
+            if (Gdk.pointer_grab(get_window(),
+                                 true,
+                                 Gdk.EventMask.BUTTON_PRESS_MASK |
+                                 Gdk.EventMask.BUTTON_RELEASE_MASK |
+                                 Gdk.EventMask.POINTER_MOTION_MASK,
+                                 null,
+                                 null,
+                                 Gdk.CURRENT_TIME) != Gdk.GrabStatus.SUCCESS) {
 
-    void hide_popup() {
-        Gdk.Display display = get_display();
-        display.keyboard_ungrab(Gdk.CURRENT_TIME);
-        display.pointer_ungrab(Gdk.CURRENT_TIME);
-        Gtk.grab_remove(this);
-        plugin.block_autohide(false);
-        volume_button.active = false;
-        hide();
+                Gtk.grab_remove(this);
+                hide();
+                return;
+            }
+
+            if (Gdk.keyboard_grab(get_window(),
+                                 true,
+                                 Gdk.CURRENT_TIME) != Gdk.GrabStatus.SUCCESS) {
+
+                get_display().pointer_ungrab(Gdk.CURRENT_TIME);
+                Gtk.grab_remove(this);
+                hide();
+                return;
+            }
+
+            grab_focus();
+            plugin.block_autohide(true);
+        }
+
+        private void on_hide() {
+            Gdk.Display display = get_display();
+            display.keyboard_ungrab(Gdk.CURRENT_TIME);
+            display.pointer_ungrab(Gdk.CURRENT_TIME);
+            Gtk.grab_remove(this);
+            plugin.block_autohide(false);
+        }
+
+        private bool on_button_press_event(Gdk.EventButton event) {
+            if (event.type == Gdk.EventType.BUTTON_PRESS) {
+                hide();
+                return true;
+            }
+            return false;
+        }
+
+        private bool on_grab_broken_event() {
+            if (has_grab() && !Gtk.grab_get_current().is_ancestor(this)) {
+                hide();
+                return true;
+            }
+            return false;
+        }
+
+        private void on_grab_notify(bool was_grabbed) {
+            if (!was_grabbed && has_grab() && !Gtk.grab_get_current().is_ancestor(this)) {
+                hide();
+            }
+        }
+
+        private bool on_key_release_event(Gdk.EventKey event) {
+            if (event.keyval == Gdk.KeySyms.Escape) {
+                hide();
+                return true;
+            }
+            return false; 
+        }
     }
 }
-

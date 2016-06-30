@@ -16,159 +16,179 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-public errordomain AlsaError {
-    DEVICE,
-    CHANNEL
-}
+namespace AlsaPlugin {
+    private class AlsaManager {
+        private Alsa.Mixer mixer;
+        private Alsa.MixerElement element;
+        private IOChannel[] channels;
+        private uint[] watches;
+        private int fd_count;
 
-public class AlsaManager {
-    Alsa.Mixer mixer;
-    Alsa.MixerElement element;
-    GLib.IOChannel[] channels;
-    uint[] watches;
-    int n_fds;
-    string device;
-    string channel;
+        private string _device;
+        public string device {
+            get { return _device; }
+            set {
+                for (int i = 0; i < fd_count; i++) {
+                    Source.remove(watches[i]);
+                    try {
+                        channels[i].shutdown(false);
+                    } catch (IOChannelError error) {
+                        stderr.printf("%s\n", error.message);
+                    }
+                }
 
-    public bool mute {
-        get {
-            if (element.has_playback_switch()) {
-                int playback_switch;
-                element.get_playback_switch(0, out playback_switch);
-                return playback_switch == 0;
-            }
-            return false;
-        }
-        set {
-            if (element.has_playback_switch())
-                element.set_playback_switch_all(value ? 0 : 1);
-            else
-                volume = 0;
-        }
-    }
+                if (mixer != null) {
+                    mixer.detach(_device);
+                }
 
-    public long volume {
-        get {
-            long volume;
-            element.get_playback_volume(0, out volume);
-            return volume;
-        }
-        set {
-            element.set_playback_volume_all(value);
-        }
-    }
+                if (element != null) {
+                    element.set_callback(null);
+                    element = null;
+                    _channel = null;
+                }
 
-    public signal void state_changed();
+                Alsa.Mixer.open(out mixer, 0);
+                if (mixer.attach(value) != 0) {
+                    stderr.printf("Error setting device\n");
+                    return;
+                }
+                _device = value;
+                mixer.register();
+                mixer.load();
 
-    bool poll_callback(GLib.IOChannel channel, GLib.IOCondition cond) {
-        mixer.handle_events();
-        return true;
-    }
+                fd_count = mixer.get_poll_descriptors_count();
+                channels = new IOChannel[fd_count];
+                watches = new uint[fd_count];
 
-    static int element_callback(Alsa.MixerElement element, uint mask) {
-        alsa.state_changed();
-        return 0;
-    }
+                var fds = new Posix.pollfd[fd_count];
+                mixer.set_poll_descriptors(fds);
 
-    public string get_device() {
-        return device;
-    }
-    public void set_device(string device) throws AlsaError {
-        for (int i = 0; i < n_fds; i++) {
-            GLib.Source.remove(watches[i]);
-            try {
-                channels[i].shutdown(false);
-            } catch (GLib.IOChannelError error) {
-                GLib.stderr.printf("%s\n", error.message);
+                for (int i = 0; i < fd_count; ++i) {
+                    var channel = new IOChannel.unix_new(fds[i].fd);
+                    channels[i] = channel;
+                    watches[i] = channel.add_watch(IOCondition.IN | IOCondition.HUP,  
+                                                   () => {
+                                                       mixer.handle_events();
+                                                       return true;
+                                                   });
+                }
+
+                state_changed();
             }
         }
 
-        if (mixer != null)
-            mixer.detach(this.device);
+        private string _channel;
+        public string channel {
+            get { return _channel; }
+            set {
+                _channel = value;
 
-        if (element != null)
-            element.set_callback(null);
+                Alsa.SimpleElementId sid;
+                Alsa.SimpleElementId.alloc(out sid);
+                sid.set_name(_channel);
 
-        Alsa.Mixer.open(out mixer, 0);
-        if (mixer.attach(device) != 0)
-            throw new AlsaError.DEVICE("Error setting device");
-        this.device = device;
-        mixer.register();
-        mixer.load();
-
-        n_fds = mixer.get_poll_descriptors_count();
-        channels = new GLib.IOChannel[n_fds];
-        watches = new uint[n_fds];
-
-        Posix.pollfd[] fds = new Posix.pollfd[n_fds];
-        mixer.set_poll_descriptors(fds);
-
-        for (int i = 0; i < n_fds; ++i) {
-            GLib.IOChannel channel = new GLib.IOChannel.unix_new(fds[i].fd);
-            channels[i] = channel;
-            watches[i] = channel.add_watch(GLib.IOCondition.IN | GLib.IOCondition.HUP,  
-                                           poll_callback);
-        }
-    }
-
-    public string get_channel() {
-        return channel;
-    }
-    public void set_channel(string channel) throws AlsaError {
-        this.channel = channel;
-
-        Alsa.SimpleElementId sid;
-        Alsa.SimpleElementId.alloc(out sid);
-        sid.set_name(this.channel);
-
-        element = mixer.find_selem(sid);
-        if (element == null) {
-            throw new AlsaError.CHANNEL("Error setting channel");
-        } else {
-            element.set_callback(element_callback);
-            element.set_playback_volume_range(0, 100);
-        }
-    }
-
-    public void get_device_list(out GLib.List<string> id_list, out GLib.List<string> name_list) {
-        id_list = new GLib.List<string>();
-        name_list = new GLib.List<string>();
-
-        id_list.append("default");
-        name_list.append("default");
-
-        int device_number = -1;
-        int ret = Alsa.Card.next(ref device_number);
-        while(ret == 0 && device_number != -1) {
-            Alsa.Card card;
-            string device_id = "hw:" + device_number.to_string();
-            Alsa.Card.open(out card, device_id);
-
-            Alsa.CardInfo card_info;
-            Alsa.CardInfo.alloc(out card_info);
-            card.card_info(card_info);
-
-            id_list.append(device_id);
-            name_list.append(card_info.get_name());
-
-            ret = Alsa.Card.next(ref device_number);
-        }
-    }
-
-    public GLib.List<string> get_channel_list() {
-        GLib.List<string> list = new GLib.List<string>();
-
-        Alsa.MixerElement current_element = mixer.first_elem();
-        Alsa.SimpleElementId sid;
-        Alsa.SimpleElementId.alloc(out sid);
-        for (int i = 0; i < mixer.get_count(); i++) {
-            if (current_element.has_playback_volume()) {
-                current_element.get_id(sid);
-                list.append(sid.get_name());
-                current_element = current_element.next();
+                element = mixer.find_selem(sid);
+                if (element == null) {
+                    stderr.printf("Error setting channel\n");
+                } else {
+                    element.set_callback(element_callback);
+                    element.set_playback_volume_range(0, 100);
+                    state_changed();
+                }
             }
         }
 
-        return list;
+        public bool configured {
+            get { return (element != null); }
+        }
+
+        public bool mute {
+            get {
+                if (configured) {
+                    if (element.has_playback_switch()) {
+                        int playback_switch;
+                        element.get_playback_switch(0, out playback_switch);
+                        return (playback_switch == 0);
+                    }
+                }
+                return false;
+            }
+            set {
+                if (configured) {
+                    if (element.has_playback_switch()) {
+                        element.set_playback_switch_all(value ? 0 : 1);
+                    } else {
+                        volume = 0;
+                    }
+                    state_changed();
+                }
+            }
+        }
+
+        public long volume {
+            get {
+                if (configured) {
+                    long volume;
+                    element.get_playback_volume(0, out volume);
+                    return volume;
+                }
+                return 0;
+            }
+            set {
+                if (configured) {
+                    element.set_playback_volume_all(value);
+                    state_changed();
+                }
+            }
+        }
+
+        public signal void state_changed();
+
+        public static void get_devices(out string[] ids, out string[] names) {
+            var _ids = new string[] {"default"};
+            var _names = new string[] {"default"};
+
+            int device_number = -1;
+            int return_code = Alsa.Card.next(ref device_number);
+            while (return_code == 0 && device_number != -1) {
+                Alsa.Card card;
+                string device_id = "hw:" + device_number.to_string();
+                Alsa.Card.open(out card, device_id);
+
+                Alsa.CardInfo card_info;
+                Alsa.CardInfo.alloc(out card_info);
+                card.card_info(card_info);
+
+                _ids += device_id;
+                _names += card_info.get_name();
+
+                return_code = Alsa.Card.next(ref device_number);
+            }
+
+            ids = (owned) _ids;
+            names = (owned) _names;
+        }
+
+        public string[] get_channels() {
+            var channels = new string[] { };
+
+            var current_element = mixer.first_elem();
+            Alsa.SimpleElementId sid;
+            Alsa.SimpleElementId.alloc(out sid);
+            for (int i = 0; i < mixer.get_count(); i++) {
+                if (current_element.has_playback_volume()) {
+                    current_element.get_id(sid);
+                    channels += sid.get_name();
+                    current_element = current_element.next();
+                }
+            }
+
+            return channels;
+        }
+
+        private static int element_callback(Alsa.MixerElement element, uint mask) {
+            alsa.state_changed();
+            return 0;
+        }
     }
 }

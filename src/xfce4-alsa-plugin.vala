@@ -16,45 +16,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-AlsaManager alsa;
+namespace AlsaPlugin {
+    private AlsaManager alsa;
 
-public class AlsaPlugin : Xfce.PanelPlugin {
-    PluginSettings plugin_settings;
-    VolumeButton volume_button;
+    private class Plugin : Xfce.PanelPlugin {
+        public override void @construct() {
+            Intl.bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
+            Intl.textdomain(GETTEXT_PACKAGE);
+            Intl.bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
 
-    public override void @construct() {
-        Intl.bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
-        Intl.textdomain(GETTEXT_PACKAGE);
-        Intl.bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
+            alsa = new AlsaManager();
 
-        alsa = new AlsaManager();
-        plugin_settings = new PluginSettings();
+            string device, channel;
+            Settings.load(out device, out channel);
+            alsa.device = device;
+            alsa.channel = channel;
 
-        bool active = true;
-        try {
-            alsa.set_device(plugin_settings.get_alsa_device_id());
-            alsa.set_channel(plugin_settings.get_alsa_channel());
-        } catch (AlsaError error) {
-            active = false;
-            GLib.stderr.printf("%s\n", error.message);
+            var button = new VolumeButton(this);
+            add(button);
+            add_action_widget(button);
+            button.show_all();
+
+            menu_show_configure();
+            configure_plugin.connect(() => {
+                var dialog = new SettingsDialog();  
+                dialog.show_all();
+            });
         }
-
-        volume_button = new VolumeButton(this, active);
-        add(volume_button);
-        add_action_widget(volume_button);
-        volume_button.show_all();
-
-        configure_plugin.connect(show_settings);
-        menu_show_configure();
-    }
-
-    void show_settings() {
-        SettingsWindow settings_window = new SettingsWindow(volume_button, plugin_settings);
-        settings_window.show_all();
     }
 }
 
 [ModuleInit]
-public GLib.Type xfce_panel_module_init(GLib.TypeModule module) {
-    return typeof (AlsaPlugin);
+public Type xfce_panel_module_init(TypeModule module) {
+    return typeof (AlsaPlugin.Plugin);
 }
