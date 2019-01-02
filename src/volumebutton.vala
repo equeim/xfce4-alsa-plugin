@@ -19,8 +19,11 @@
 namespace AlsaPlugin {
     private class VolumeButton : Gtk.ToggleButton {
         private Plugin plugin;
-        private Xfce.PanelImage icon;
-        private string current_icon;
+#if XFCE4_13
+        public Gtk.Image icon = new Gtk.Image();
+#else
+        Xfce.PanelImage icon = new Xfce.PanelImage();
+#endif
 
         private VolumePopup volume_popup;
 
@@ -28,6 +31,21 @@ namespace AlsaPlugin {
             this.plugin = plugin;
 
             relief = Gtk.ReliefStyle.NONE;
+            add_events(Gdk.EventMask.SCROLL_MASK);
+
+#if GTK3
+            var provider = new Gtk.CssProvider();
+            try {
+                provider.load_from_data("""
+                                        .xfce4-panel button {
+                                            padding: 1px;
+                                        }
+                                        """);
+                get_style_context().add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
+            } catch (Error error) {
+                stderr.printf("%s\n", error.message);
+            }
+#else
             Gtk.rc_parse_string("""
                                 style "button-style"
                                 {
@@ -35,19 +53,27 @@ namespace AlsaPlugin {
                                 }
                                 widget_class "*<AlsaPluginVolumeButton>" style "button-style"
                                 """);
+#endif
 
-            icon = new Xfce.PanelImage();
             add(icon);
 
             volume_popup = new VolumePopup(plugin);
-            volume_popup.show.connect(() => { this.active = true; });
+            volume_popup.show.connect(() => {
+                this.active = true;
+                position_popup();
+            });
             volume_popup.hide.connect(() => { this.active = false; });
+
+            plugin.size_changed.connect((size) => {
+                update();
+                position_popup();
+                return false;
+            });
+            plugin.orientation_changed.connect(position_popup);
 
             alsa.state_changed.connect(update);
             button_press_event.connect(on_button_press_event);
             scroll_event.connect(on_scroll_event);
-
-            update();
         }
 
         private void update() {
@@ -65,10 +91,15 @@ namespace AlsaPlugin {
                 icon_name = "audio-volume-high";
             }
 
-            if (icon_name != current_icon) {
-                current_icon = icon_name;
-                icon.set_from_source(icon_name);
-            }
+            int size = plugin.size / (int) plugin.nrows;
+            set_size_request(size, size);
+
+#if XFCE4_13
+            icon.set_from_icon_name(icon_name, Gtk.IconSize.BUTTON);
+            icon.set_pixel_size(plugin.get_icon_size());
+#else
+            icon.set_from_source(icon_name);
+#endif
 
             if (alsa.configured) {
                 if (mute) {
@@ -81,15 +112,21 @@ namespace AlsaPlugin {
             }
         }
 
+        private void position_popup() {
+            if (volume_popup.visible) {
+                int x = 0;
+                int y = 0;
+                plugin.position_widget(volume_popup, this, out x, out y);
+                volume_popup.move(x, y);
+            }
+        }
+
         bool on_button_press_event(Gdk.EventButton event) {
             if (event.type == Gdk.EventType.BUTTON_PRESS) {
                 switch (event.button) {
                 case 1:
                 {
                     if (alsa.configured) {
-                        int x, y;
-                        plugin.position_widget(volume_popup, this, out x, out y);
-                        volume_popup.move(x, y);
                         volume_popup.show_all();
                     }
                     return true;

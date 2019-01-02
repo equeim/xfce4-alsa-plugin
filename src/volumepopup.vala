@@ -20,6 +20,10 @@ namespace AlsaPlugin {
     private class VolumePopup : Gtk.Window {
         private Plugin plugin;
 
+#if GTK3
+        private Gdk.Seat seat = null;
+#endif
+
         public VolumePopup(Plugin plugin) {
             Object(type: Gtk.WindowType.POPUP);
             this.plugin = plugin;
@@ -28,11 +32,19 @@ namespace AlsaPlugin {
             frame.shadow_type = Gtk.ShadowType.OUT;
             add(frame);
 
+#if GTK3
+            var scale_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+#else
             var scale_container = new Gtk.VBox(false, 0);
+#endif
             scale_container.border_width = 2;
             frame.add(scale_container);
 
+#if GTK3
+            var scale = new Gtk.Scale.with_range(Gtk.Orientation.VERTICAL, 0.0, 100.0, 3.0);
+#else
             var scale = new Gtk.VScale.with_range(0.0, 100.0, 3.0);
+#endif
             scale.draw_value = false;
             scale.inverted = true;
             scale.set_size_request(-1, 128);
@@ -58,6 +70,31 @@ namespace AlsaPlugin {
         }
 
         private void on_show() {
+#if GTK3
+            if (seat != null) {
+                seat.ungrab();
+                plugin.block_autohide(false);
+            }
+            seat = null;
+            var device = Gtk.get_current_event_device();
+            if (device == null) {
+                seat = get_display().get_default_seat();
+            } else {
+                seat = device.seat;
+            }
+
+            if (seat.grab(get_window(),
+                          Gdk.SeatCapabilities.ALL,
+                          true,
+                          null,
+                          null,
+                          null) != Gdk.GrabStatus.SUCCESS) {
+                seat = null;
+                hide();
+                return;
+            }
+            plugin.block_autohide(true);
+#else
             Gtk.grab_add(this);
         
             if (Gdk.pointer_grab(get_window(),
@@ -86,13 +123,21 @@ namespace AlsaPlugin {
 
             grab_focus();
             plugin.block_autohide(true);
+#endif
         }
 
         private void on_hide() {
+#if GTK3
+            if (seat != null) {
+                seat.ungrab();
+                seat = null;
+            }
+#else
             Gdk.Display display = get_display();
             display.keyboard_ungrab(Gdk.CURRENT_TIME);
             display.pointer_ungrab(Gdk.CURRENT_TIME);
             Gtk.grab_remove(this);
+#endif
             plugin.block_autohide(false);
         }
 

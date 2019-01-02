@@ -28,13 +28,43 @@ namespace AlsaPlugin {
 
             set_size_request(320, -1);
 
+#if GTK3
+            var close_button = new Gtk.Button.from_icon_name("window-close");
+            close_button.label = _("Close");
+#else
             var close_button = new Gtk.Button.from_stock(Gtk.Stock.CLOSE);
+#endif
             close_button.clicked.connect(() => close());
             add_action_widget(close_button, Gtk.ResponseType.CLOSE);
             
+            devices_combo_box = new Gtk.ComboBoxText();
+            channels_combo_box = new Gtk.ComboBoxText();
+
+#if GTK3
+            devices_combo_box.hexpand = true;
+            devices_combo_box.margin = 8;
+            devices_combo_box.margin_top = 0;
+            channels_combo_box.hexpand = true;
+            channels_combo_box.margin = 8;
+            channels_combo_box.margin_top = 0;
+
+            var grid = new Gtk.Grid();
+            ((Gtk.Container) get_content_area()).add(grid);
+
+            var devices_label = new Gtk.Label(_("Device:"));
+            devices_label.margin_start = 16;
+            devices_label.margin_end = 16;
+            grid.attach(devices_label, 0, 0);
+            grid.attach(devices_combo_box, 1, 0);
+
+            var channels_label = new Gtk.Label(_("Channel:"));
+            channels_label.margin_start = 16;
+            channels_label.margin_end = 16;
+            grid.attach(channels_label, 0, 1);
+            grid.attach(channels_combo_box, 1, 1);
+#else
             var table = new Gtk.Table(2, 2, false);
             ((Gtk.Container) get_content_area()).add(table);
-
             table.attach(new Gtk.Label(_("Device:")),
                          0,
                          1,
@@ -45,7 +75,6 @@ namespace AlsaPlugin {
                          16,
                          8);
 
-            devices_combo_box = new Gtk.ComboBoxText();
             table.attach(devices_combo_box,
                          1,
                          2,
@@ -66,7 +95,6 @@ namespace AlsaPlugin {
                          16,
                          8);
 
-            channels_combo_box = new Gtk.ComboBoxText();
             table.attach(channels_combo_box,
                          1,
                          2,
@@ -76,6 +104,7 @@ namespace AlsaPlugin {
                          Gtk.AttachOptions.SHRINK,
                          0,
                          0);
+#endif
 
             string[] device_names;
             AlsaManager.get_devices(out device_ids, out device_names);
@@ -90,6 +119,7 @@ namespace AlsaPlugin {
             devices_combo_box.changed.connect(() => {
                 alsa.device = device_ids[devices_combo_box.active];
                 update_channels();
+                Settings.save(device_ids[devices_combo_box.active], channels_combo_box.get_active_text());
             });
 
             update_channels();
@@ -98,11 +128,8 @@ namespace AlsaPlugin {
                 if (channels_combo_box.active != -1) {
                     alsa.channel = channels_combo_box.get_active_text();
                 }
+                Settings.save(device_ids[devices_combo_box.active], channels_combo_box.get_active_text());
             });
-        }
-
-        ~SettingsDialog() {
-            Settings.save(device_ids[devices_combo_box.active], channels_combo_box.get_active_text());
         }
 
         private void update_channels() {
