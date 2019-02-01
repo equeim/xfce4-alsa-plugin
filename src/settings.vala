@@ -21,10 +21,12 @@ namespace AlsaPlugin {
         private const string GROUP_NAME = "Settings";
         private const string DEVICE_ID_KEY = "alsa_device_id";
         private const string CHANNEL_KEY = "alsa_channel";
+        private const string VOLUME_STEP_KEY = "volume_step";
+        private const double DEFAULT_VOLUME_STEP = 3.0;
 
         //private const string path = Environment.get_user_config_dir();
 
-        private void load(out string device_id, out string channel) {
+        private void load(out string device_id, out string channel, out double volume_step) {
             var settings = new KeyFile();
 
             try {
@@ -46,14 +48,25 @@ namespace AlsaPlugin {
             } catch (KeyFileError error) {
                 channel = "Master";
             }
+
+            try {
+                volume_step = settings.get_double(GROUP_NAME, VOLUME_STEP_KEY);
+            } catch (KeyFileError error) {
+                volume_step = DEFAULT_VOLUME_STEP;
+            }
+            if (volume_step < 1.0) {
+                stderr.printf("Volume step can't be less than 1, setting to %f", DEFAULT_VOLUME_STEP);
+                volume_step = DEFAULT_VOLUME_STEP;
+            }
         }
 
-        private void save(string device_id, string? channel) {
+        private void save(string device_id, string? channel, double volume_step) {
             var settings = new KeyFile();
             settings.set_string(GROUP_NAME, DEVICE_ID_KEY, device_id);
             if (channel != null) {
                 settings.set_string(GROUP_NAME, CHANNEL_KEY, channel);
             }
+            settings.set_double(GROUP_NAME, VOLUME_STEP_KEY, volume_step);
 
             string config_directory_path = "%s/%s".printf(Environment.get_user_config_dir(), PACKAGE_NAME);
             try {

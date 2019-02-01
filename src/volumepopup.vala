@@ -19,7 +19,8 @@
 namespace AlsaPlugin {
     private class VolumePopup : Gtk.Window {
         private Plugin plugin;
-
+        private Gtk.Box scale_container;
+        private Gtk.Scale scale;
 #if GTK3
         private Gdk.Seat seat = null;
 #endif
@@ -33,17 +34,36 @@ namespace AlsaPlugin {
             add(frame);
 
 #if GTK3
-            var scale_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            scale_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 #else
-            var scale_container = new Gtk.VBox(false, 0);
+            scale_container = new Gtk.VBox(false, 0);
 #endif
             scale_container.border_width = 2;
             frame.add(scale_container);
 
+            setup_scale();
+
+            alsa.state_changed.connect(() => {
+                scale.set_value(alsa.volume);
+            });
+
+            plugin.notify["volume-step"].connect((s, p) => {
+                reset_scale();
+            });
+
+            show.connect(on_show);
+            hide.connect(on_hide);
+            button_press_event.connect(on_button_press_event);
+            grab_broken_event.connect(on_grab_broken_event);
+            grab_notify.connect(on_grab_notify);
+            key_release_event.connect(on_key_release_event);
+        }
+
+        private void setup_scale() {
 #if GTK3
-            var scale = new Gtk.Scale.with_range(Gtk.Orientation.VERTICAL, 0.0, 100.0, 3.0);
+            scale = new Gtk.Scale.with_range(Gtk.Orientation.VERTICAL, 0.0, 100.0, plugin.volume_step);
 #else
-            var scale = new Gtk.VScale.with_range(0.0, 100.0, 3.0);
+            scale = new Gtk.VScale.with_range(0.0, 100.0, plugin.volume_step);
 #endif
             scale.draw_value = false;
             scale.inverted = true;
@@ -55,18 +75,13 @@ namespace AlsaPlugin {
                 return false;
             });
 
-            alsa.state_changed.connect(() => {
-                scale.set_value(alsa.volume);
-            });
-
             scale_container.add(scale);
+        }
 
-            show.connect(on_show);
-            hide.connect(on_hide);
-            button_press_event.connect(on_button_press_event);
-            grab_broken_event.connect(on_grab_broken_event);
-            grab_notify.connect(on_grab_notify);
-            key_release_event.connect(on_key_release_event);
+        private void reset_scale() {
+            scale_container.remove(scale);
+            scale = null;
+            setup_scale();
         }
 
         private void on_show() {

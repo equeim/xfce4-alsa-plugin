@@ -20,6 +20,8 @@ namespace AlsaPlugin {
     private AlsaManager alsa;
 
     private class Plugin : Xfce.PanelPlugin {
+        internal double volume_step { get; set; }
+
         public override void @construct() {
             Intl.bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
             Intl.textdomain(GETTEXT_PACKAGE);
@@ -28,7 +30,9 @@ namespace AlsaPlugin {
             alsa = new AlsaManager();
 
             string device, channel;
-            Settings.load(out device, out channel);
+            double step;
+            Settings.load(out device, out channel, out step);
+            volume_step = step;
             alsa.device = device;
             alsa.channel = channel;
 
@@ -39,7 +43,7 @@ namespace AlsaPlugin {
 
             menu_show_configure();
             configure_plugin.connect(() => {
-                var dialog = new SettingsDialog();  
+                var dialog = new SettingsDialog(this);
                 dialog.show_all();
             });
         }

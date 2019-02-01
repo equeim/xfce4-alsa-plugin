@@ -149,13 +149,13 @@ namespace AlsaPlugin {
                     if (volume >= 97) {
                         volume = 100;
                     } else {
-                        volume += 3;
+                        volume += (long) plugin.volume_step;
                     }
                 } else {
                     if (volume <= 3) {
                         volume = 0;
                     } else {
-                        volume -= 3;
+                        volume -= (long) plugin.volume_step;
                     }
                 }
 
