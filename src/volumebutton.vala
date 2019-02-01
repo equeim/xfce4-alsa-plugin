@@ -146,16 +146,14 @@ namespace AlsaPlugin {
                     (event.direction == Gdk.ScrollDirection.DOWN && volume > 0)) {
 
                 if (event.direction == Gdk.ScrollDirection.UP) {
-                    if (volume >= 97) {
+                    volume += (long) plugin.volume_step;
+                    if (volume > 100) {
                         volume = 100;
-                    } else {
-                        volume += (long) plugin.volume_step;
                     }
                 } else {
-                    if (volume <= 3) {
+                    volume -= (long) plugin.volume_step;
+                    if (volume < 0) {
                         volume = 0;
-                    } else {
-                        volume -= (long) plugin.volume_step;
                     }
                 }
 
