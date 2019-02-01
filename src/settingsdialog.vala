@@ -26,8 +26,6 @@ namespace AlsaPlugin {
             icon_name = "multimedia-volume-control";
             title = _("ALSA Volume Control");
 
-            set_size_request(320, -1);
-
 #if GTK3
             var close_button = new Gtk.Button.from_icon_name("window-close");
             close_button.label = _("Close");
