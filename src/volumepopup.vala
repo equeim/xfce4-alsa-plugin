@@ -100,7 +100,7 @@ namespace AlsaPlugin {
 
             if (seat.grab(get_window(),
                           Gdk.SeatCapabilities.ALL,
-                          true,
+                          false,
                           null,
                           null,
                           null) != Gdk.GrabStatus.SUCCESS) {
