@@ -179,6 +179,9 @@ namespace AlsaPlugin {
                     channels_combo_box.active = i;
                 }
             }
+            if (channels_combo_box.active == -1) {
+                channels_combo_box.active = 0;
+            }
         }
     }
 }
