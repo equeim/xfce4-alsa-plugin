@@ -39,6 +39,7 @@ namespace AlsaPlugin {
             scale_container = new Gtk.VBox(false, 0);
 #endif
             scale_container.border_width = 2;
+            scale_container.button_press_event.connect(() => { return true; });
             frame.add(scale_container);
 
             setup_scale();
@@ -100,7 +101,7 @@ namespace AlsaPlugin {
 
             if (seat.grab(get_window(),
                           Gdk.SeatCapabilities.ALL,
-                          false,
+                          true,
                           null,
                           null,
                           null) != Gdk.GrabStatus.SUCCESS) {
