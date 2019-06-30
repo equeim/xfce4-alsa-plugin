@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2019-06-30
+### Added
+- Added support of deskbar mode
+### Fixed
+- Fixed popup grabbing with GTK+ 3
+
 ## [0.2.0] - 2019-02-02
 ### Added
 - GTK+ 3 support
