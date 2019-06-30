@@ -64,12 +64,18 @@ namespace AlsaPlugin {
             });
             volume_popup.hide.connect(() => { this.active = false; });
 
+            plugin.small = true;
             plugin.size_changed.connect((size) => {
                 update();
                 position_popup();
-                return false;
+                return true;
             });
-            plugin.orientation_changed.connect(position_popup);
+
+            plugin.mode_changed.connect((mode) => {
+					stdout.printf("mode_changed called.\n");
+                update();
+                position_popup();
+            });
 
             alsa.state_changed.connect(update);
             button_press_event.connect(on_button_press_event);
