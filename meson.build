@@ -12,7 +12,6 @@ add_project_arguments('-DLOCALEDIR="@0@"'.format(join_paths(get_option('prefix')
 dependencies = [dependency('alsa'),
                 dependency('gtk+-3.0', version : '>= 3.20.0'),
                 dependency('libxfce4panel-2.0', version : '>= 4.13.0'),
-                meson.get_compiler('vala').find_library('gdkkeysyms-2.0', dirs : vapi_dir),
                 meson.get_compiler('vala').find_library('config', dirs : vapi_dir)]
 
 shared_library('alsa',

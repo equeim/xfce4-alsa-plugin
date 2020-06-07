@@ -132,7 +132,7 @@ namespace AlsaPlugin {
         }
 
         private bool on_key_release_event(Gdk.EventKey event) {
-            if (event.keyval == Gdk.KeySyms.Escape) {
+            if (event.keyval == Gdk.Key.Escape) {
                 hide();
                 return true;
             }
