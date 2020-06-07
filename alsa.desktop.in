@@ -5,4 +5,4 @@ Name=ALSA Volume Control
 Comment=Adjust ALSA volume levels
 Icon=multimedia-volume-control
 X-XFCE-Module=alsa
-X-XFCE-API=@api_version@
+X-XFCE-API=2.0

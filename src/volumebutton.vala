@@ -19,11 +19,7 @@
 namespace AlsaPlugin {
     private class VolumeButton : Gtk.ToggleButton {
         private Plugin plugin;
-#if XFCE4_13
         public Gtk.Image icon = new Gtk.Image();
-#else
-        Xfce.PanelImage icon = new Xfce.PanelImage();
-#endif
 
         private VolumePopup volume_popup;
 
@@ -33,27 +29,17 @@ namespace AlsaPlugin {
             relief = Gtk.ReliefStyle.NONE;
             add_events(Gdk.EventMask.SCROLL_MASK);
 
-#if GTK3
-            var provider = new Gtk.CssProvider();
+            var cssProvider = new Gtk.CssProvider();
             try {
-                provider.load_from_data("""
-                                        .xfce4-panel button {
-                                            padding: 1px;
-                                        }
-                                        """);
-                get_style_context().add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
+                cssProvider.load_from_data("""
+                                           .xfce4-panel button {
+                                               padding: 1px;
+                                           }
+                                           """);
+                get_style_context().add_provider(cssProvider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
             } catch (Error error) {
                 stderr.printf("%s\n", error.message);
             }
-#else
-            Gtk.rc_parse_string("""
-                                style "button-style"
-                                {
-                                    GtkButton::inner-border = {0, 0, 0, 0}
-                                }
-                                widget_class "*<AlsaPluginVolumeButton>" style "button-style"
-                                """);
-#endif
 
             add(icon);
 
@@ -100,12 +86,8 @@ namespace AlsaPlugin {
             int size = plugin.size / (int) plugin.nrows;
             set_size_request(size, size);
 
-#if XFCE4_13
             icon.set_from_icon_name(icon_name, Gtk.IconSize.BUTTON);
             icon.set_pixel_size(plugin.get_icon_size());
-#else
-            icon.set_from_source(icon_name);
-#endif
 
             if (alsa.configured) {
                 if (mute) {

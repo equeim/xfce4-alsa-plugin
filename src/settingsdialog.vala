@@ -26,12 +26,8 @@ namespace AlsaPlugin {
             icon_name = "multimedia-volume-control";
             title = _("ALSA Volume Control");
 
-#if GTK3
             var close_button = new Gtk.Button.from_icon_name("window-close");
             close_button.label = _("Close");
-#else
-            var close_button = new Gtk.Button.from_stock(Gtk.Stock.CLOSE);
-#endif
             close_button.clicked.connect(() => close());
             add_action_widget(close_button, Gtk.ResponseType.CLOSE);
 
@@ -43,7 +39,6 @@ namespace AlsaPlugin {
             var step_spin_button = new Gtk.SpinButton.with_range(1.0, 25.0, 1.0);
             step_spin_button.set_value(plugin.volume_step);
 
-#if GTK3
             devices_combo_box.hexpand = true;
             devices_combo_box.margin = 8;
             devices_combo_box.margin_top = 0;
@@ -71,69 +66,6 @@ namespace AlsaPlugin {
             step_spin_button.margin_start = 8;
             step_spin_button.margin_end = 8;
             grid.attach(step_spin_button, 1, 2);
-#else
-            var table = new Gtk.Table(3, 2, false);
-            ((Gtk.Container) get_content_area()).add(table);
-            table.attach(devices_label,
-                         0,
-                         1,
-                         0,
-                         1,
-                         Gtk.AttachOptions.SHRINK,
-                         Gtk.AttachOptions.SHRINK,
-                         16,
-                         8);
-
-            table.attach(devices_combo_box,
-                         1,
-                         2,
-                         0,
-                         1,
-                         Gtk.AttachOptions.EXPAND | Gtk.AttachOptions.FILL,
-                         Gtk.AttachOptions.SHRINK,
-                         0,
-                         0);
-
-            table.attach(channels_label,
-                         0,
-                         1,
-                         1,
-                         2,
-                         Gtk.AttachOptions.SHRINK,
-                         Gtk.AttachOptions.SHRINK,
-                         16,
-                         8);
-
-            table.attach(channels_combo_box,
-                         1,
-                         2,
-                         1,
-                         2,
-                         Gtk.AttachOptions.EXPAND | Gtk.AttachOptions.FILL,
-                         Gtk.AttachOptions.SHRINK,
-                         0,
-                         0);
-
-            table.attach(step_label,
-                         0,
-                         1,
-                         2,
-                         3,
-                         Gtk.AttachOptions.SHRINK,
-                         Gtk.AttachOptions.SHRINK,
-                         16,
-                         8);
-
-            table.attach(step_spin_button,
-                         1,
-                         2,
-                         2,
-                         3,
-                         Gtk.AttachOptions.EXPAND | Gtk.AttachOptions.FILL,
-                         Gtk.AttachOptions.SHRINK,
-                         0,
-                         0);
-#endif
 
             string[] device_names;
             AlsaManager.get_devices(out device_ids, out device_names);

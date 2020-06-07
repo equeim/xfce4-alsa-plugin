@@ -21,9 +21,7 @@ namespace AlsaPlugin {
         private Plugin plugin;
         private Gtk.Box scale_container;
         private Gtk.Scale scale;
-#if GTK3
         private Gdk.Seat seat = null;
-#endif
 
         public VolumePopup(Plugin plugin) {
             Object(type: Gtk.WindowType.POPUP);
@@ -33,11 +31,7 @@ namespace AlsaPlugin {
             frame.shadow_type = Gtk.ShadowType.OUT;
             add(frame);
 
-#if GTK3
             scale_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-#else
-            scale_container = new Gtk.VBox(false, 0);
-#endif
             scale_container.border_width = 2;
             scale_container.button_press_event.connect(() => { return true; });
             frame.add(scale_container);
@@ -61,11 +55,7 @@ namespace AlsaPlugin {
         }
 
         private void setup_scale() {
-#if GTK3
             scale = new Gtk.Scale.with_range(Gtk.Orientation.VERTICAL, 0.0, 100.0, plugin.volume_step);
-#else
-            scale = new Gtk.VScale.with_range(0.0, 100.0, plugin.volume_step);
-#endif
             scale.draw_value = false;
             scale.inverted = true;
             scale.set_size_request(-1, 128);
@@ -86,7 +76,6 @@ namespace AlsaPlugin {
         }
 
         private void on_show() {
-#if GTK3
             if (seat != null) {
                 seat.ungrab();
                 plugin.block_autohide(false);
@@ -110,50 +99,13 @@ namespace AlsaPlugin {
                 return;
             }
             plugin.block_autohide(true);
-#else
-            Gtk.grab_add(this);
-        
-            if (Gdk.pointer_grab(get_window(),
-                                 true,
-                                 Gdk.EventMask.BUTTON_PRESS_MASK |
-                                 Gdk.EventMask.BUTTON_RELEASE_MASK |
-                                 Gdk.EventMask.POINTER_MOTION_MASK,
-                                 null,
-                                 null,
-                                 Gdk.CURRENT_TIME) != Gdk.GrabStatus.SUCCESS) {
-
-                Gtk.grab_remove(this);
-                hide();
-                return;
-            }
-
-            if (Gdk.keyboard_grab(get_window(),
-                                 true,
-                                 Gdk.CURRENT_TIME) != Gdk.GrabStatus.SUCCESS) {
-
-                get_display().pointer_ungrab(Gdk.CURRENT_TIME);
-                Gtk.grab_remove(this);
-                hide();
-                return;
-            }
-
-            grab_focus();
-            plugin.block_autohide(true);
-#endif
         }
 
         private void on_hide() {
-#if GTK3
             if (seat != null) {
                 seat.ungrab();
                 seat = null;
             }
-#else
-            Gdk.Display display = get_display();
-            display.keyboard_ungrab(Gdk.CURRENT_TIME);
-            display.pointer_ungrab(Gdk.CURRENT_TIME);
-            Gtk.grab_remove(this);
-#endif
             plugin.block_autohide(false);
         }
 
