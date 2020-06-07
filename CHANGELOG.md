@@ -1,8 +1,16 @@
 # Changelog
 
+## [0.3.0] - 2020-06-07
+### Removed
+- Dropped support of GTK+ 2
+
+### Fixed
+- Fixed remote_event compilation error
+
 ## [0.2.1] - 2019-06-30
 ### Added
 - Added support of deskbar mode
+
 ### Fixed
 - Fixed popup grabbing with GTK+ 3
 
