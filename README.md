@@ -12,8 +12,7 @@ Simple ALSA volume control for xfce4-panel
 
 ### Building
 ```sh
-# meson build -Dgtk3=true
-meson build
-ninja -C build
-ninja -C build install
+meson setup build
+meson compile -C build
+meson install -C build
 ```
