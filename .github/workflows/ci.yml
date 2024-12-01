@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015-2024 Alexey Rochev
+#
+# SPDX-License-Identifier: CC0-1.0
+
 name: CI
 
 on:
@@ -52,3 +56,14 @@ jobs:
         run: |
           meson setup build
           meson compile -C build -v
+
+  reuse-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+
+    - name: Check REUSE compliance
+      run: |
+        sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install pipx
+        pipx run reuse lint

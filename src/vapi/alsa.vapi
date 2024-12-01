@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009-2011 Michael 'Mickey' Lauer <mlauer@vanille-media.de>
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 /* asound.vapi
  *
  * Copyright (C) 2009-2011 Michael 'Mickey' Lauer <mlauer@vanille-media.de>
