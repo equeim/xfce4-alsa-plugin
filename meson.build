@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015-2024 Alexey Rochev
+#
+# SPDX-License-Identifier: CC0-1.0
+
 project('xfce4-alsa-plugin', 'vala', 'c', meson_version : '>= 0.37.0')
 
 i18n = import('i18n')
