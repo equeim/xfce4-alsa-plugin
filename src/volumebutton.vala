@@ -58,7 +58,7 @@ namespace AlsaPlugin {
             });
 
             plugin.mode_changed.connect((mode) => {
-					stdout.printf("mode_changed called.\n");
+                stdout.printf("mode_changed called.\n");
                 update();
                 position_popup();
             });
