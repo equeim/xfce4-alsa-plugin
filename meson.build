@@ -14,9 +14,15 @@ add_project_arguments('-Wno-unused-variable', language: 'c')
 add_project_arguments('-Wno-unused-value', language: 'c')
 add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
 
+libxfce4panel_dep = dependency('libxfce4panel-2.0', version : '>= 4.13.0')
+message(libxfce4panel_dep.version())
+if libxfce4panel_dep.version().version_compare('>= 4.19.0')
+    add_project_arguments('--define=XFCE_420', language : 'vala')
+endif
+
 dependencies = [dependency('alsa'),
                 dependency('gtk+-3.0', version : '>= 3.20.0'),
-                dependency('libxfce4panel-2.0', version : '>= 4.13.0'),
+                libxfce4panel_dep,
                 meson.get_compiler('vala').find_library('config', dirs : vapi_dir)]
 
 shared_library('alsa',
