@@ -9,6 +9,11 @@ add_project_arguments('-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()), la
 add_project_arguments('-DPACKAGE_NAME="@0@"'.format(meson.project_name()), language : 'c')
 add_project_arguments('-DLOCALEDIR="@0@"'.format(join_paths(get_option('prefix'), get_option('localedir'))), language : 'c')
 
+# Suppress GCC warning about unused variables in generated code
+add_project_arguments('-Wno-unused-variable', language: 'c')
+add_project_arguments('-Wno-unused-value', language: 'c')
+add_project_arguments('-Wno-unused-but-set-variable', language: 'c')
+
 dependencies = [dependency('alsa'),
                 dependency('gtk+-3.0', version : '>= 3.20.0'),
                 dependency('libxfce4panel-2.0', version : '>= 4.13.0'),
