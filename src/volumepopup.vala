@@ -21,10 +21,16 @@ namespace AlsaPlugin {
         private Plugin plugin;
         private Gtk.Box scale_container;
         private Gtk.Scale scale;
+#if !XFCE_420
         private Gdk.Seat seat = null;
+#endif
 
         public VolumePopup(Plugin plugin) {
+#if XFCE_420
+            Object(type: Gtk.WindowType.TOPLEVEL);
+#else
             Object(type: Gtk.WindowType.POPUP);
+#endif
             this.plugin = plugin;
 
             var frame = new Gtk.Frame(null);
@@ -38,6 +44,8 @@ namespace AlsaPlugin {
 
             setup_scale();
 
+            frame.show_all();
+
             alsa.state_changed.connect(() => {
                 scale.set_value(alsa.volume);
             });
@@ -46,12 +54,14 @@ namespace AlsaPlugin {
                 reset_scale();
             });
 
+#if !XFCE_420
             show.connect(on_show);
             hide.connect(on_hide);
             button_press_event.connect(on_button_press_event);
             grab_broken_event.connect(on_grab_broken_event);
             grab_notify.connect(on_grab_notify);
             key_release_event.connect(on_key_release_event);
+#endif
         }
 
         private void setup_scale() {
@@ -73,8 +83,10 @@ namespace AlsaPlugin {
             scale_container.remove(scale);
             scale = null;
             setup_scale();
+            scale.show();
         }
 
+#if !XFCE_420
         private void on_show() {
             if (seat != null) {
                 seat.ungrab();
@@ -138,5 +150,6 @@ namespace AlsaPlugin {
             }
             return false; 
         }
+#endif
     }
 }

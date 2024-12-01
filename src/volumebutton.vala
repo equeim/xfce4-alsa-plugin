@@ -46,21 +46,27 @@ namespace AlsaPlugin {
             volume_popup = new VolumePopup(plugin);
             volume_popup.show.connect(() => {
                 this.active = true;
+#if !XFCE_420
                 position_popup();
+#endif
             });
             volume_popup.hide.connect(() => { this.active = false; });
 
             plugin.small = true;
             plugin.size_changed.connect((size) => {
                 update();
+#if !XFCE_420
                 position_popup();
+#endif
                 return true;
             });
 
             plugin.mode_changed.connect((mode) => {
-					stdout.printf("mode_changed called.\n");
+                stdout.printf("mode_changed called.\n");
                 update();
+#if !XFCE_420
                 position_popup();
+#endif
             });
 
             alsa.state_changed.connect(update);
@@ -100,6 +106,7 @@ namespace AlsaPlugin {
             }
         }
 
+#if !XFCE_420
         private void position_popup() {
             if (volume_popup.visible) {
                 int x = 0;
@@ -108,6 +115,7 @@ namespace AlsaPlugin {
                 volume_popup.move(x, y);
             }
         }
+#endif
 
         bool on_button_press_event(Gdk.EventButton event) {
             if (event.type == Gdk.EventType.BUTTON_PRESS) {
@@ -115,7 +123,12 @@ namespace AlsaPlugin {
                 case 1:
                 {
                     if (alsa.configured) {
+#if XFCE_420
+                        plugin.popup_window(volume_popup, null);
+#else
                         volume_popup.show_all();
+#endif
+
                     }
                     return true;
                 }

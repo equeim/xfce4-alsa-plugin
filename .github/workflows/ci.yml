@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+jobs:
+  build-debian:
+    runs-on: ubuntu-latest
+    container: "debian:12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install gcc meson valac libxfce4panel-2.0-dev libasound2-dev gettext
+
+      - name: Build
+        run: |
+          meson setup build
+          meson compile -C build -v
+
+  build-tumbleweed:
+    strategy:
+      fail-fast: false
+      matrix:
+        with-419: [ true, false ]
+
+    runs-on: ubuntu-latest
+    container: "opensuse/tumbleweed:latest"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add XFCE 4.19 repo
+        if: matrix.with-419
+        run: |
+          zypper ar -p 90 https://download.opensuse.org/repositories/X11:/xfce:/4.19/openSUSE_Tumbleweed/X11:xfce:4.19.repo
+
+      - name: Install dependencies
+        run: |
+          zypper --non-interactive --gpg-auto-import-keys in --no-recommends --details gcc meson vala xfce4-panel-devel alsa-devel gettext
+
+      - name: Build
+        run: |
+          meson setup build
+          meson compile -C build -v
