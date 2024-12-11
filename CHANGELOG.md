@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.0] - 2024-12-11
+### Added
+- Support of Xfce 4.20 and Wayland
+
 ## [0.3.0] - 2020-06-07
 ### Removed
 - Dropped support of GTK+ 2
