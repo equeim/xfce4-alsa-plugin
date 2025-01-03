@@ -32,21 +32,11 @@ jobs:
           meson compile -C build -v
 
   build-tumbleweed:
-    strategy:
-      fail-fast: false
-      matrix:
-        with-419: [ true, false ]
-
     runs-on: ubuntu-latest
     container: "opensuse/tumbleweed:latest"
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Add XFCE 4.19 repo
-        if: matrix.with-419
-        run: |
-          zypper ar -p 90 https://download.opensuse.org/repositories/X11:/xfce:/4.19/openSUSE_Tumbleweed/X11:xfce:4.19.repo
 
       - name: Install dependencies
         run: |
